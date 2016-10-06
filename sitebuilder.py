@@ -19,8 +19,10 @@ Options include::
   -h, --help           show this help message and exit
   -d FILE, --dir=FILE  directory to start
   -i, --indexes        generate HTML indexes in every visited folder
-  -l, --links          rewrite urls in links and images. Overwrites existing
-                       urls.
+  -j, --jslinks        rewrite javascript urls. Overwrites existing url root.
+  -c, --csslinks       rewrite css urls in links and images. Overwrites
+                       existing url root.
+  -p, --imglinks       rewrite image urls. Overwrites existing url root.
   -n, --navbars        insert navbars into pages
   -N, --forcenavbars   Slow! Risky! insert navbars into pages, attempting to
                        remove previous bars
