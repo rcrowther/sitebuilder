@@ -158,7 +158,7 @@ bodyHeaderMarkup = '<header id="site-nav"><nav><ul><li><a href="/articles/">Arti
 # followed by trailing hash (basename is extracted from original link)
 cssRoot = "/home/rob/Code/css/print/book/"
 jsRoot = "/js/"
-imageRoot = "/images/"
+imageRoot = "/resources/images/"
 
 
 # Change for new intro to indexes
@@ -196,6 +196,12 @@ def indexLinkTemplate(href, text):
 
 
 ### Internal ###
+css = 0
+js = 1
+img = 2
+
+
+
 def printInfo(msg):
     print('[info] {0}'.format(msg))
     
@@ -258,23 +264,31 @@ def insertNavbar(line):
 
 
 # match. Note the opening dot skip for relative links
-cssJSRe = re.compile(r'href=\"(\.?\.?[^\.]+\.(css|js))\"', re.IGNORECASE)
+cssRe = re.compile(r'href=\"(\.?\.?[^\.]+\.css)\"', re.IGNORECASE)
+# match. Note the opening dot skip for relative links
+jsRe = re.compile(r'href=\"(\.?\.?[^\.]+\.js)\"', re.IGNORECASE)
 # match img links
 srcRe = re.compile(r'src=\"([^\"]+)"', re.IGNORECASE)
  
-def rewriteLinks(line):
+def rewriteLinks(line, tpe):
     def cssRep(m):
-        root = cssRoot if m.group(2) == "css" else jsRoot
-        p = os.path.join(root, os.path.basename(m.group(1)))
+        p = os.path.join(cssRoot, os.path.basename(m.group(1)))
+        return 'href=\"' + p + '"'
+        
+    def jsRep(m):
+        p = os.path.join(jsRoot, os.path.basename(m.group(1)))
         return 'href=\"' + p + '"'
         
     def imgRep(m):
         p = os.path.join(imageRoot, os.path.basename(m.group(1)))
         return 'src=\"' + p + '"'
 
-    l1 = re.sub(cssJSRe, cssRep, line)
-    l2 = re.sub(srcRe, imgRep, l1)
-    return l2
+    if (tpe == css):
+        return  re.sub(cssRe, cssRep, line)
+    elif (tpe == js):
+        return  re.sub(jsRe, jsRep, line)
+    elif (tpe == img):
+        return  re.sub(srcRe, imgRep, line)
 
 
 
@@ -369,9 +383,17 @@ def rewriteFiles(rootDir, dirPath, dirnameList, filePathList, options):
         fOut = open(outP, 'w')
 
         for l in fIn:
-            l1 = rewriteLinks(l) if options.links else l
+            tmp = l
+            if options.cssLinks:
+                tmp = rewriteLinks(tmp, css)
+            if options.jsLinks:
+                tmp = rewriteLinks(tmp, js)
+            if options.imgLinks:
+                tmp = rewriteLinks(tmp, img)
+
+
             #print l1
-            l2 = removeNavbar(l1) if options.forcednavbars else l1
+            l2 = removeNavbar(tmp) if options.forcednavbars else tmp
             l3 = insertNavbar(l2) if options.navbars else l2
             fOut.write(l3)
             
@@ -389,7 +411,7 @@ def containsIndex(filenames):
         r = r or e.startswith('index')
     return r
     
-def processDirs(rootPath, options):    
+def processDirs(rootPath, options, hasLinkRewrites):    
     for (dirPath, dirnames, filenames) in walk(rootPath):
         
         # ignore hidden files
@@ -407,7 +429,7 @@ def processDirs(rootPath, options):
 
         #print filePathList       
         # options.forcednavbars also enables option.navbars
-        if options.links or options.navbars: 
+        if hasLinkRewrites or options.navbars: 
             rewriteFiles(
                 rootPath,
                 dirPath, 
@@ -445,9 +467,15 @@ def main(argv):
     parser.add_option("-i", "--indexes",
                   action="store_true", dest="indexes", default=False,
                   help="generate HTML indexes in every visited folder")
-    parser.add_option("-l", "--links",
-                  action="store_true", dest="links", default=False,
-                  help="rewrite urls in links and images. Overwrites existing urls.")
+    parser.add_option("-j", "--jslinks",
+                  action="store_true", dest="jsLinks", default=False,
+                  help="rewrite javascript urls. Overwrites existing url root.")
+    parser.add_option("-c", "--csslinks",
+                  action="store_true", dest="cssLinks", default=False,
+                  help="rewrite css urls in links and images. Overwrites existing url root.")
+    parser.add_option("-p", "--imglinks",
+                  action="store_true", dest="imgLinks", default=False,
+                  help="rewrite image urls. Overwrites existing url root.")
     parser.add_option("-n", "--navbars",
                   action="store_true", dest="navbars", default=False,
                   help="insert navbars into pages")
@@ -464,19 +492,22 @@ def main(argv):
     #parser.print_help()
     if options.forcednavbars:
         options.navbars = True
-
+        
+    hasLinkRewrites =  options.cssLinks or  options.jsLinks or  options.imgLinks
             
     rootPath = os.path.abspath(options.rootfile)
 
     print('Root directory:', rootPath)
     print('Make Indexes:', options.indexes)
-    print('Make Links:', options.links)
-    print('Make Navbars:', options.navbars)
+    print('Use ShortURLs in indexes:', options.shorturls)
+    print('Reroot CSS Links:', options.cssLinks)
+    print('Reroot Javascript Links:', options.jsLinks)
+    print('Reroot image Links:', options.imgLinks)
+    print('Insert Navbars:', options.navbars)
     print('Force Navbars:', options.forcednavbars)
-    print('ShortURLs:', options.shorturls)
     
     #try:
-    processDirs(rootPath, options)
+    processDirs(rootPath, options, hasLinkRewrites)
     #except IOError:
       #  print('file would not open: %s' % inPath)
     #finally:
