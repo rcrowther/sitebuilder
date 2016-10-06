@@ -151,7 +151,7 @@ from os import walk
 ### User vars ###
 
 # Change for new navbar. Should start with a 'header' or 'nav' element.
-bodyHeaderMarkup = '<header><nav><ul><li><a href="/articles/">Articles</a></li><li><a href="/projects/">Projects</a></li><li><a href="/about.htm">About</a></li></ul></nav></header>'
+bodyHeaderMarkup = '<header id="site-nav"><nav><ul><li><a href="/articles/">Articles</a></li><li><a href="/projects/">Projects</a></li><li><a href="/about.htm">About</a></li></ul></nav></header>'
 
 # Change for static link targets
 # Would usually be absolute links
@@ -163,13 +163,16 @@ imageRoot = "/images/"
 
 # Change for new intro to indexes
 def webPageOpen(f, title):
-    f.write('<!DOCTYPE html>\n<html>\n<head>\n<title>')
-    f.write(title)
-    f.write('</title>\n<meta http-equiv="content-type" content="text/html; charset=UTF-8" />\n<link rel="stylesheet" type="text/css" media="screen" href="')
-    f.write('/home/rob/Code/css/print/book/book.css')
-    #f.write('/home/rob/Code/css/display/plain_carbon_display/plain_carbon_display.css')
+    #css1 = '/home/rob/Code/css/display/plain_carbon_display/plain_carbon_display.css'
+    css1 = '/home/rob/Code/css/print/book/book.css'
+    css2 = '/home/rob/Code/css/display/book/webbook.css'
 
-    f.write('"/>\n</head>\n<body>')
+    f.write('<!DOCTYPE html>\n<html>\n<head>\n<title>{0}</title>\n'.format(title))
+    f.write('<meta http-equiv="content-type" content="text/html; charset=UTF-8" />\n')
+    f.write('<link rel="stylesheet" type="text/css" media="screen" href="{0}"/>\n'.format(css1))
+    f.write('<link rel="stylesheet" type="text/css" media="screen" href="{0}"/>\n'.format(css2))
+
+    f.write('</head>\n<body>')
     f.write(bodyHeaderMarkup)
     f.write('<article>\n<h1>')
     f.write(title)
@@ -180,9 +183,27 @@ def webPageOpen(f, title):
 def webPageClose(f):
     f.write('</article></body></html>')
     
+def indexOpenTemplate():
+    return '<nav class="toc">\n'
+        
+def indexCloseTemplate():
+    return '</nav>\n'
+
+        
+def indexLinkTemplate(href, text):
+    return '<li><a href="{0}">{1}</a></li>\n'.format(href, text)
+
 
 
 ### Internal ###
+def printInfo(msg):
+    print('[info] {0}'.format(msg))
+    
+def printError(msg):
+    print('[Error] {0}'.format(msg))
+    
+    
+    
 def limitsFirstHeader(line, targetedTag):
     '''
     header/nav must be there, and well-formed, or this can cause a lot 
@@ -302,7 +323,8 @@ def mkIndex(rootDir, dirPath, dirnameList, filePathList, options):
         
         webPageOpen(f, title)
 
-        f.write('<ul class="toc file-directory">\n')
+        f.write(indexOpenTemplate())
+        f.write('<ul  class="wide">\n')
 
         # directories
         dfpl = sortRespectingNumerics(dirnameList)
@@ -312,13 +334,9 @@ def mkIndex(rootDir, dirPath, dirnameList, filePathList, options):
             # if not given index file target, enforce final slash 
             href = fp + '/' if options.shorturls else fp + os.path.sep + 'index.htm' 
             txt = fp.replace('_', ' ')
-            f.write('<li><a href="')
-            f.write(href)
-            f.write('">')
-            f.write(txt)
-            f.write('</a></li>\n')
+            f.write( indexLinkTemplate(href, txt) )
             
-        f.write('</ul>\n<ul class="toc file-entry">\n')
+        f.write('</ul>\n<ul  class="wide">\n')
 
 
         # files
@@ -329,19 +347,16 @@ def mkIndex(rootDir, dirPath, dirnameList, filePathList, options):
             noExtPath = fp[: fp.rfind('.')]
             href = noExtPath if options.shorturls else fp
             txt = noExtPath.replace('_', ' ')
-            f.write('<li><a href="')
-            f.write(href)
-            f.write('">')
-            f.write(txt)
-            f.write('</a></li>\n')
+            f.write( indexLinkTemplate(href, txt) )
 
         f.write('</ul>\n')
+        f.write(indexCloseTemplate())
 
         webPageClose(f)
 
         f.close()
     except IOError:
-        print('file can not be created (exists? permissions?): %s' % p)
+        printError('index file can not be created (exists? permissions?): %s' % p)
 
 
 def rewriteFiles(rootDir, dirPath, dirnameList, filePathList, options):
@@ -355,7 +370,7 @@ def rewriteFiles(rootDir, dirPath, dirnameList, filePathList, options):
 
         for l in fIn:
             l1 = rewriteLinks(l) if options.links else l
-            print l1
+            #print l1
             l2 = removeNavbar(l1) if options.forcednavbars else l1
             l3 = insertNavbar(l2) if options.navbars else l2
             fOut.write(l3)
@@ -403,16 +418,18 @@ def processDirs(rootPath, options):
                 
         # indexes after links
         # dont rewrite existing
-        print containsIndex(filenames)
-        if options.indexes and not containsIndex(filenames): 
-            mkIndex(
-                rootPath,
-                dirPath, 
-                dirPathList, 
-                entryPathList, 
-                options
-                )        
-
+        #print containsIndex(filenames)
+        if options.indexes:
+            if not containsIndex(filenames): 
+                mkIndex(
+                    rootPath,
+                    dirPath, 
+                    dirPathList, 
+                    entryPathList, 
+                    options
+                    )        
+            else:
+                printInfo("Existing index ignored Path:" + dirPath)
         
 # main
 
@@ -451,12 +468,12 @@ def main(argv):
             
     rootPath = os.path.abspath(options.rootfile)
 
-    print 'Root directory:', rootPath
-    print 'Make Indexes:', options.indexes
-    print 'Make Links:', options.links
-    print 'Make Navbars:', options.navbars
-    print 'Force Navbars:', options.forcednavbars
-    print 'ShortURLs:', options.shorturls
+    print('Root directory:', rootPath)
+    print('Make Indexes:', options.indexes)
+    print('Make Links:', options.links)
+    print('Make Navbars:', options.navbars)
+    print('Force Navbars:', options.forcednavbars)
+    print('ShortURLs:', options.shorturls)
     
     #try:
     processDirs(rootPath, options)
