@@ -4,6 +4,20 @@ GTK frontend to Python script.
 
 The script has a gaudy name meaning 'conversions and maintenance of HTML files in websites'.
 
+.. figure:: https://raw.githubusercontent.com/rcrowther/sitebuilder/master/text/sitebuilder_target.jpg
+    :width: 160 px
+    :alt: gsitebuilder screenshot
+    :align: center
+
+    Pick folders...
+
+.. figure:: https://raw.githubusercontent.com/rcrowther/sitebuilder/master/text/sitebuilder_js.jpg
+    :width: 160 px
+    :alt: gsitebuilder screenshot
+    :align: center
+
+    ...and fix
+
 The script can work in a given directory, or recursively down from that directory.
 
 
