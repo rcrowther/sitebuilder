@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="gsettings-desktop-schemas">
+  <schema path="/uk/co/archaicgroves/gsitebuilder/" id="uk.co.archaicgroves.gsitebuilder">
+    <!--
+        a(targetPathStr, recursive, headerStr, headerOverwrite, 
+        indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs
+        cssStr, cssButtonIndex, cssMatch,
+        jsStr, jsOverwrite, cssMatch, 
+        imgStr)
+    -->
+    <key type="a(sbsbsbbsbsississ)" name="data">
+      <default>[]</default>
+      <summary>Data for Sitebuilder</summary>
+      <description>Settings backup for Sitebuilder.</description>
+    </key>
+  </schema>
+</schemalist>
