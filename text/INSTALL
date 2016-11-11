@@ -1,0 +1,14 @@
+= Install
+
+== Requires
+Python3, GTK environment, YUI compressor or slimmer
+
+
+
+== Meson
+cd ../SiteBuilder
+mkdir build
+/usr/local/bin/meson.py build
+cd build
+sudo ninja schema-install
+

@@ -130,10 +130,16 @@ def mkIndex(
     try:
         f = open(p, 'w')
 
-        # make page title
-        # Uppercase fails badly in Unicode. Use CSS? Probably better.
-        lastElem = os.path.basename(dirPath).replace('_', ' ')
-        title = "defaulty" if(not lastElem or lastElem == '.') else lastElem
+        # Make page title        
+        # get a tail....
+        head, tail = os.path.split(dirPath)
+        # if tail fails, likely passed a slash ended directory, so go one higher...
+        lastElem = tail if (tail) else os.path.basename(head)
+        
+        # if left at a root (who does this?) default, 
+        # otherwise substitute out underscores for the title.
+        # Uppercase/capitalising fails badly in Unicode. Leave styling to CSS.
+        title = "defaulty" if(not lastElem or lastElem == '.') else lastElem.replace('_', ' ')
         
         webPageOpen(f, title, headHTML, headerHTML)
 

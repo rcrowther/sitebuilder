@@ -45,11 +45,11 @@ DATA_KEY = 'data'
 
 
 # a(targetPathStr, recursive, headerStr, headerOverwrite, 
-# indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs
+# indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader
 # cssStr, cssButtonIndex, cssMatch,
-# jsStr, jsOverwrite, cssMatch, 
+# jsStr, jsOverwrite, jsMatch, 
 # imgStr)
-DATA_SIGNATURE = "a(sbsbsbbsbsississ)"
+DATA_SIGNATURE = "a(sbsbsbbsbbsississ)"
 
 
 
@@ -138,7 +138,8 @@ class MyWindow(Gtk.Window):
         indexAbsoluteURLs = self.indexAbsoluteURLs.get_active()
         indexURLRootPath = self.indexAbsoluteRoot.get_text()
         indexShortURLs = self.indexShortURLs.get_active() 
-            		
+        indexInsertBodyHeader = self.indexInsertBodyHeader.get_active() 
+        
         cssStr = self.cssPath.get_text()
         cssButtonIdx = self.getActiveToggle(self.CSSGroup)
         cssMatchStr = self.matchCSS.get_text()
@@ -159,6 +160,7 @@ class MyWindow(Gtk.Window):
         indexAbsoluteURLs,
         indexURLRootPath,
         indexShortURLs,
+        indexInsertBodyHeader, 
         cssStr,
         cssButtonIdx,
         cssMatchStr,
@@ -193,16 +195,17 @@ class MyWindow(Gtk.Window):
             self.indexAbsoluteURLs.set_active(datum[6])
             self.indexAbsoluteRoot.set_text(datum[7])
             self.indexShortURLs.set_active(datum[8])            
-			
-            self.cssPath.set_text(datum[9])
-            self.setActiveByIndex(self.CSSGroup, datum[10])
-            self.matchCSS.set_text(datum[11])
+            self.indexInsertBodyHeader.set_active(datum[9])
+             
+            self.cssPath.set_text(datum[10])
+            self.setActiveByIndex(self.CSSGroup, datum[11])
+            self.matchCSS.set_text(datum[12])
 	
-            self.jsPath.set_text(datum[12])
-            self.setActiveByIndex(self.JSGroup, datum[13])
-            self.matchJS.set_text(datum[14])
+            self.jsPath.set_text(datum[13])
+            self.setActiveByIndex(self.JSGroup, datum[14])
+            self.matchJS.set_text(datum[15])
 					
-            self.imgPath.set_text(datum[15])
+            self.imgPath.set_text(datum[16])
 
 
 
@@ -346,11 +349,11 @@ class MyWindow(Gtk.Window):
         self.clearStatus()
 
         headHTML = self.getText(self.indexHeadHTML)
-        headerHTML = ''
         o = self.overwriteIndexes.get_active()
         a = self.indexAbsoluteURLs.get_active()
         r = self.indexAbsoluteRoot.get_text().strip()
         s = self.indexShortURLs.get_active()
+        h = self.indexInsertBodyHeader.get_active()
         
         if (not r and a):
             self.warning("root path empty for absolute URLs?")
@@ -358,13 +361,15 @@ class MyWindow(Gtk.Window):
             ## TODO: not including self?
             targetIt = self._modification_target_dir_iter()
             if (targetIt):
+                bodyHeaderMarkup = self.getText(self.headerBuffer).strip() if (h) else ''
+                
                 sl = statlog.statLog()
                 self.spinnerStart()
                 for p in targetIt:
                     sl.touched()
                     index_create.run(
                         headHTML,
-                        headerHTML,
+                        bodyHeaderMarkup,
                         p,
                         o,
                         a,
@@ -592,6 +597,8 @@ class MyWindow(Gtk.Window):
         self.indexShortURLs = Gtk.CheckButton.new_with_label("Generate short URLs")
         box.pack_start(self.indexShortURLs, False, False, 0)        
         
+        self.indexInsertBodyHeader = Gtk.CheckButton.new_with_label("Insert header from 'header' tab")
+        box.pack_start(self.indexInsertBodyHeader, False, False, 0) 
         
         button = Gtk.Button(label="Make indexes")
         button.connect("clicked", self._createIndexes)

@@ -3,12 +3,12 @@
   <schema path="/uk/co/archaicgroves/gsitebuilder/" id="uk.co.archaicgroves.gsitebuilder">
     <!--
         a(targetPathStr, recursive, headerStr, headerOverwrite, 
-        indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs
+        indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader
         cssStr, cssButtonIndex, cssMatch,
         jsStr, jsOverwrite, cssMatch, 
         imgStr)
     -->
-    <key type="a(sbsbsbbsbsississ)" name="data">
+    <key type="a(sbsbsbbsbbsississ)" name="data">
       <default>[]</default>
       <summary>Data for Sitebuilder</summary>
       <description>Settings backup for Sitebuilder.</description>
