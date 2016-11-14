@@ -1,0 +1,8 @@
+pyversions=2.4-
+
+/usr/share/pyshared/tolk/__init__.py
+/usr/share/pyshared/tolk/glade.py
+/usr/share/pyshared/tolk/i18n.py
+/usr/share/pyshared/tolk/prefix.py
+/usr/share/pyshared/tolk/simplegeneric.py
+/usr/share/pyshared/tolk/widget_state.py

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# NB: unmodified MESON_BUILD_ROOT point to the top directory(?)
+bash ./schema-install
+
+mkdir -p "/usr/lib/pymodules/python3"
+cp -r "${MESON_SOURCE_ROOT}/sitebuilder" "/usr/lib/pymodules/python3"
+# permanantly set a python3 path to the library
+echo "/usr/lib/pymodules/python3" > "/usr/lib/python3/dist-packages/sitebuilder.pth"
+
+cp "${MESON_SOURCE_ROOT}/sitebuilder-gtk.py" "/usr/local/bin/sitebuilder-gtk"
+
+cp "${MESON_SOURCE_ROOT}/icons/sitebuilder-gtk16x16.png" "/usr/share/icons/hicolor/16x16/apps/sitebuilder-gtk.png"
+cp "${MESON_SOURCE_ROOT}/icons/sitebuilder-gtk48x48.png" "/usr/share/icons/hicolor/48x48/apps/sitebuilder-gtk.png"
+cp "${MESON_SOURCE_ROOT}/icons/sitebuilder-gtk.svg" "/usr/share/icons/hicolor/scalable/apps/sitebuilder-gtk.svg"
+
+# NB: user-specific  ~/.local/share/applications has been a flop for me
+cp "${MESON_SOURCE_ROOT}/uk.co.archaicgroves.sitebuilder-gtk.desktop" "/usr/share/applications/uk.co.archaicgroves.sitebuilder-gtk.desktop"
+gtk-update-icon-cache /usr/share/icons/hicolor/

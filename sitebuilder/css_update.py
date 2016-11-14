@@ -1,7 +1,8 @@
 
 import os.path
 from html.parser import HTMLParser
-import statlog
+import sitebuilder.statlog
+statlog = sitebuilder.statlog
 
 
 ## TODO: 

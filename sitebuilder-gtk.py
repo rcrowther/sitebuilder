@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-
-
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -14,13 +11,26 @@ from os import walk
 
 import shutil
 
-import header_merge
-import css_update
-import js_update
-import index_create
-import img_update
+# how does 
+#/usr/bin/apertium-tolk
+# see
+#/usr/share/pyshared/tolk?
 
-import statlog
+import sitebuilder
+statlog = sitebuilder.statlog
+#import header_merge
+#import css_update
+#import js_update
+#import index_create
+#import img_update
+#_ = sitebuilder._
+#import header_merge
+#import css_update
+#import js_update
+#import index_create
+#import img_update
+
+#import statlog
 
 '''
 Perform various actions on website pages.
@@ -334,7 +344,7 @@ class MyWindow(Gtk.Window):
                 for p in targetIt:
                     sl.touched()
                     src = "".join(open(p).readlines())            
-                    modified = header_merge.run(
+                    modified = sitebuilder.header_merge.run(
                         src,
                         b,
                         o,
@@ -367,7 +377,7 @@ class MyWindow(Gtk.Window):
                 self.spinnerStart()
                 for p in targetIt:
                     sl.touched()
-                    index_create.run(
+                    sitebuilder.index_create.run(
                         headHTML,
                         bodyHeaderMarkup,
                         p,
@@ -400,7 +410,7 @@ class MyWindow(Gtk.Window):
                     for p in targetIt:
                         sl.touched()
                         src = "".join(open(p).readlines())  
-                        modified = css_update.run(
+                        modified = sitebuilder.css_update.run(
                             src,
                             css,
                             actionIdx,
@@ -434,7 +444,7 @@ class MyWindow(Gtk.Window):
                     for p in targetIt:
                         sl.touched()
                         src = "".join(open(p).readlines())  
-                        modified = js_update.run(
+                        modified = sitebuilder.js_update.run(
                             src,
                             js,
                             actionIdx,
@@ -461,7 +471,7 @@ class MyWindow(Gtk.Window):
                 for p in targetIt:
                     sl.touched()
                     src = "".join(open(p).readlines())
-                    modified = img_update.run(
+                    modified = sitebuilder.img_update.run(
                         src,
                         rootP,
                         sl
@@ -483,7 +493,9 @@ class MyWindow(Gtk.Window):
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                  "Select", Gtk.ResponseType.OK))
             dialog.set_default_size(800, 400)
-    
+            # contrary to GTK3 advice
+            dialog.set_current_folder(self.targetPath.get_text())
+            
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
                 path = dialog.get_filename()

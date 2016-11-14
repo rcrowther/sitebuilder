@@ -11,7 +11,8 @@ doc/
 src/test
 html/
 html.bck/
-
+__pycache__
+sitebuilder/__pycache__
 
 # ignore tests
 en-lanc1

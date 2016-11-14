@@ -1,0 +1,15 @@
+#!/bin/sh
+
+bash ./schema-uninstall
+
+rm "/usr/local/bin/sitebuilder-gtk"
+rm -r "/usr/lib/pymodules/python3/sitebuilder"
+rm "/usr/lib/python3/dist-packages/sitebuilder.pth"
+
+rm "/usr/share/icons/hicolor/16x16/apps/sitebuilder-gtk.png"
+rm "/usr/share/icons/hicolor/48x48/apps/sitebuilder-gtk.png"
+rm "/usr/share/icons/hicolor/scalable/apps/sitebuilder-gtk.svg"
+
+# NB: user-specific  ~/.local/share/applications has been a flop for me
+rm "/usr/share/applications/uk.co.archaicgroves.sitebuilder-gtk.desktop"
+gtk-update-icon-cache /usr/share/icons/hicolor/

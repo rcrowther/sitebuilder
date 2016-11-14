@@ -11,7 +11,8 @@
 
 import os.path 
 from os import walk
-import statlog
+import sitebuilder.statlog
+statlog = sitebuilder.statlog
 
 
 

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=0.0.2
+Name=Sitebuilder-gtk
+Comment=Modify HTML pages
+Encoding=UTF-8
+Categories=GTK;Development;Utility;
+Exec=sitebuilder-gtk
+Icon=sitebuilder-gtk
+Terminal=false
+StartupNotify=true

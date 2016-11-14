@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist gettext-domain="gsettings-desktop-schemas">
-  <schema path="/uk/co/archaicgroves/gsitebuilder/" id="uk.co.archaicgroves.gsitebuilder">
+  <schema path="/uk/co/archaicgroves/sitebuilder/" id="uk.co.archaicgroves.sitebuilder">
     <!--
         a(targetPathStr, recursive, headerStr, headerOverwrite, 
         indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader

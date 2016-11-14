@@ -1,6 +1,7 @@
 import re
 import os.path 
-import statlog
+import sitebuilder.statlog
+statlog = sitebuilder.statlog
 
 
 # match img links
