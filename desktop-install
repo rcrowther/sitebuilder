@@ -5,7 +5,8 @@ bash ./schema-install
 
 mkdir -p "/usr/lib/pymodules/python3"
 cp -r "${MESON_SOURCE_ROOT}/sitebuilder" "/usr/lib/pymodules/python3"
-# permanantly set a python3 path to the library
+# set permissions, then permanantly set a python3 path to the library
+chmod -R u+rwx,go+rx "/usr/lib/pymodules/python3"
 echo "/usr/lib/pymodules/python3" > "/usr/lib/python3/dist-packages/sitebuilder.pth"
 
 cp "${MESON_SOURCE_ROOT}/sitebuilder-gtk.py" "/usr/local/bin/sitebuilder-gtk"
