@@ -50,16 +50,17 @@ This GTK interface needs a GSettings schema installing.
 ### User Data ##
 #################
 
-GSCHEMA = "uk.co.archaicgroves.gsitebuilder"
+GSCHEMA = "uk.co.archaicgroves.sitebuilder-gtk"
 DATA_KEY = 'data'
 
 
 # a(targetPathStr, recursive, headerStr, headerOverwrite, 
 # indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader
+# metaStr, metaButtonIndex,
 # cssStr, cssButtonIndex, cssMatch,
 # jsStr, jsOverwrite, jsMatch, 
 # imgStr)
-DATA_SIGNATURE = "a(sbsbsbbsbbsississ)"
+DATA_SIGNATURE = "a(sbsbsbbsbbsisississ)"
 
 
 
@@ -150,6 +151,9 @@ class MyWindow(Gtk.Window):
         indexShortURLs = self.indexShortURLs.get_active() 
         indexInsertBodyHeader = self.indexInsertBodyHeader.get_active() 
         
+        metaStr = self.metaElem.get_text()
+        metaButtonIdx = self.getActiveToggle(self.MetaGroup)
+        
         cssStr = self.cssPath.get_text()
         cssButtonIdx = self.getActiveToggle(self.CSSGroup)
         cssMatchStr = self.matchCSS.get_text()
@@ -171,6 +175,8 @@ class MyWindow(Gtk.Window):
         indexURLRootPath,
         indexShortURLs,
         indexInsertBodyHeader, 
+        metaStr,
+        metaButtonIdx,
         cssStr,
         cssButtonIdx,
         cssMatchStr,
@@ -207,15 +213,19 @@ class MyWindow(Gtk.Window):
             self.indexShortURLs.set_active(datum[8])            
             self.indexInsertBodyHeader.set_active(datum[9])
              
-            self.cssPath.set_text(datum[10])
-            self.setActiveByIndex(self.CSSGroup, datum[11])
-            self.matchCSS.set_text(datum[12])
+
+            self.metaElem.set_text(datum[10])
+            self.setActiveByIndex(self.MetaGroup, datum[11])
+            
+            self.cssPath.set_text(datum[12])
+            self.setActiveByIndex(self.CSSGroup, datum[13])
+            self.matchCSS.set_text(datum[14])
 	
-            self.jsPath.set_text(datum[13])
-            self.setActiveByIndex(self.JSGroup, datum[14])
-            self.matchJS.set_text(datum[15])
+            self.jsPath.set_text(datum[15])
+            self.setActiveByIndex(self.JSGroup, datum[16])
+            self.matchJS.set_text(datum[17])
 					
-            self.imgPath.set_text(datum[16])
+            self.imgPath.set_text(datum[18])
 
 
 
@@ -389,7 +399,36 @@ class MyWindow(Gtk.Window):
                         )
                 self.spinnerStop()
                 self.statMessage(sl)
-                            
+                
+                
+    def _insertMeta(self, widget):
+        self.clearStatus()
+        
+        meta = self.metaElem.get_text().strip()
+        actionIdx = self.getActiveToggle(self.MetaGroup)
+
+        if ((actionIdx == self.ABOVE) and not meta):
+            self.warning("empty insert?")
+        else:
+            targetIt = self._modification_target_entry_iter()
+            if (targetIt):                
+                sl = statlog.statLog()
+                self.spinnerStart()
+                for p in targetIt:
+                    sl.touched()
+                    src = "".join(open(p).readlines())  
+                    modified = sitebuilder.meta_update.run(
+                        src,
+                        meta,
+                        actionIdx,
+                        sl
+                        )
+                    with open(p, 'w') as out:
+                        out.write(modified)
+                self.spinnerStop()
+                self.statMessage(sl)
+                        
+                                  
     def _insertCSS(self, widget):
         self.clearStatus()
         
@@ -619,8 +658,43 @@ class MyWindow(Gtk.Window):
 
         return box
 
+    def metaPage(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.set_homogeneous(False)
+    
+    
+		## Meta elements
+        label = Gtk.Label()
+        label.set_markup("<b>Meta elements</b>")
+        label.set_halign(Gtk.Align.START)  
+        box.pack_start(label, False, True, 0)
 
-            
+        label = Gtk.Label()
+        label.set_markup("insert:\n<i>(full element, replace can be empty for delete)</i>")
+        label.set_halign(Gtk.Align.START)  
+        box.pack_start(label, False, True, 0)
+                
+        self.metaElem = Gtk.Entry()
+        box.pack_start(self.metaElem, False, True, 0)
+
+
+        self.insertAboveMeta = Gtk.RadioButton.new_with_label(None, "Insert below <head>")
+        box.pack_start(self.insertAboveMeta, False, False, 0)      
+
+        self.replaceAllMeta = Gtk.RadioButton.new_from_widget(self.insertAboveMeta)
+        self.replaceAllMeta.set_label("Replace existing")
+        box.pack_start(self.replaceAllMeta, False, False, 0)
+                
+        self.MetaGroup = self.insertAboveMeta.get_group()
+
+        button = Gtk.Button(label="Insert meta elements")
+        button.set_margin_bottom(8)
+        button.connect("clicked", self._insertMeta)
+        box.pack_start(button, False, True, 0)                
+        
+        return box
+        
+           
     def cssUrlPage(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.set_homogeneous(False)
@@ -769,11 +843,15 @@ class MyWindow(Gtk.Window):
 
         page = self.headersPage()
         page.set_border_width(10)
-        self.notebook.append_page(page, Gtk.Label('Headers'))
+        self.notebook.append_page(page, Gtk.Label('Page Headers'))
 
         page = self.indexesPage()
         page.set_border_width(10)
         self.notebook.append_page(page, Gtk.Label('Indexes'))                
+        
+        page = self.metaPage()
+        page.set_border_width(10)
+        self.notebook.append_page(page, Gtk.Label('Meta elems'))
         
         page = self.cssUrlPage()
         page.set_border_width(10)
