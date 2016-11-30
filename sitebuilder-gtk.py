@@ -39,12 +39,13 @@ This GTK interface needs a GSettings schema installing.
 '''
 
 ## TODO:
+# target navigation to single files
 # Compressor?
 # advanced logs?
-# commandline
+# redo commandline
 # entry keystroke on some textboxes
-# spinner
-# better target navigation
+# spinner not showing?
+# DRY up a bit
 
 #################
 ### User Data ##
@@ -114,7 +115,7 @@ class MyWindow(Gtk.Window):
         #self.spinner.show()
         
 
-    def getText(self, textBuffer):
+    def getBufferText(self, textBuffer):
         start = textBuffer.get_start_iter()
         end = textBuffer.get_end_iter()
         return  textBuffer.get_text(start, end, True)
@@ -141,17 +142,17 @@ class MyWindow(Gtk.Window):
         targetPathStr = self.targetPath.get_text()
         targetRecursive = self.recursiveVisit.get_active()
         
-        headerStr = self.getText(self.headerBuffer)
+        headerStr = self.getBufferText(self.headerBuffer)
         headerOverwrite = self.overwriteHeader.get_active()
 
-        indexStr = self.getText(self.indexHeadHTML)
+        indexStr = self.getBufferText(self.indexHeadHTML)
         indexOverwrite = self.overwriteIndexes.get_active()
         indexAbsoluteURLs = self.indexAbsoluteURLs.get_active()
         indexURLRootPath = self.indexAbsoluteRoot.get_text()
         indexShortURLs = self.indexShortURLs.get_active() 
         indexInsertBodyHeader = self.indexInsertBodyHeader.get_active() 
         
-        metaStr = self.metaElem.get_text()
+        metaStr = self.getBufferText(self.metaHTML)
         metaButtonIdx = self.getActiveToggle(self.MetaGroup)
         
         cssStr = self.cssPath.get_text()
@@ -214,7 +215,7 @@ class MyWindow(Gtk.Window):
             self.indexInsertBodyHeader.set_active(datum[9])
              
 
-            self.metaElem.set_text(datum[10])
+            self.metaHTML.set_text(datum[10])
             self.setActiveByIndex(self.MetaGroup, datum[11])
             
             self.cssPath.set_text(datum[12])
@@ -341,7 +342,7 @@ class MyWindow(Gtk.Window):
     def _insertHeaders(self, widget):
         self.clearStatus()
             
-        b = self.getText(self.headerBuffer).strip()
+        b = self.getBufferText(self.headerBuffer).strip()
         o = self.overwriteHeader.get_active()
 
         if (not b and not o):
@@ -368,7 +369,7 @@ class MyWindow(Gtk.Window):
     def _createIndexes(self, widget):
         self.clearStatus()
 
-        headHTML = self.getText(self.indexHeadHTML)
+        headHTML = self.getBufferText(self.indexHeadHTML)
         o = self.overwriteIndexes.get_active()
         a = self.indexAbsoluteURLs.get_active()
         r = self.indexAbsoluteRoot.get_text().strip()
@@ -381,7 +382,7 @@ class MyWindow(Gtk.Window):
             ## TODO: not including self?
             targetIt = self._modification_target_dir_iter()
             if (targetIt):
-                bodyHeaderMarkup = self.getText(self.headerBuffer).strip() if (h) else ''
+                bodyHeaderMarkup = self.getBufferText(self.headerBuffer).strip() if (h) else ''
                 
                 sl = statlog.statLog()
                 self.spinnerStart()
@@ -404,7 +405,8 @@ class MyWindow(Gtk.Window):
     def _insertMeta(self, widget):
         self.clearStatus()
         
-        meta = self.metaElem.get_text().strip()
+        meta = self.getBufferText(self.metaHTML).strip()
+
         actionIdx = self.getActiveToggle(self.MetaGroup)
 
         if ((actionIdx == self.ABOVE) and not meta):
@@ -648,7 +650,7 @@ class MyWindow(Gtk.Window):
         self.indexShortURLs = Gtk.CheckButton.new_with_label("Generate short URLs")
         box.pack_start(self.indexShortURLs, False, False, 0)        
         
-        self.indexInsertBodyHeader = Gtk.CheckButton.new_with_label("Insert header from 'header' tab")
+        self.indexInsertBodyHeader = Gtk.CheckButton.new_with_label("Insert page header from 'Page Headers' tab")
         box.pack_start(self.indexInsertBodyHeader, False, False, 0) 
         
         button = Gtk.Button(label="Make indexes")
@@ -674,9 +676,12 @@ class MyWindow(Gtk.Window):
         label.set_halign(Gtk.Align.START)  
         box.pack_start(label, False, True, 0)
                 
-        self.metaElem = Gtk.Entry()
-        box.pack_start(self.metaElem, False, True, 0)
-
+        view = Gtk.TextView()
+        view.set_margin_bottom(8)
+        view.set_wrap_mode(Gtk.WrapMode.WORD)
+        view.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1,1,1,.5))
+        box.pack_start(view, True, True, 0)
+        self.metaHTML = view.get_buffer()
 
         self.insertAboveMeta = Gtk.RadioButton.new_with_label(None, "Insert below <head>")
         box.pack_start(self.insertAboveMeta, False, False, 0)      
