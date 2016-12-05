@@ -236,10 +236,20 @@ class MyWindow(Gtk.Window):
         # clear status
         self.clearStatus()
         
-        
+    def _target_as_dir(self):
+        path = self.targetPath.get_text().strip()
+        if (os.path.isdir(path)):
+            return path
+        else:
+            return os.path.dirname(path)
             
     ## TODO Remove hidden files
     class _dir_iter():
+        ''' Visit directories
+        Ignores UNIX hidden files.
+        @param path a directory path 
+        @param recursive walk recursively 
+        '''
         def __init__(self, path, recursive):
             self.recursive = recursive
             self.it = walk(path)
@@ -283,6 +293,11 @@ class MyWindow(Gtk.Window):
 
 
     class _entry_iter():
+        ''' Visit entry files
+        Ignores UNIX hidden files.
+        @param path a directory path 
+        @param recursive walk recursively 
+        '''
         def __init__(self, path, recursive):
             self.recursive = recursive
             self.it = walk(path) 
@@ -317,24 +332,61 @@ class MyWindow(Gtk.Window):
                 except StopIteration:
                     raise StopIteration
 
-        
+    class _entry_single_iter():
+        ''' Visit an entry file
+        Uses same interface as _dir_iter() and _entry_iter()
+        Ignores UNIX hidden files.
+        @param path an entry path 
+        '''
+        def __init__(self, path):
+            self.path = path.strip()
+            self.exhausted = False
+            
+        def _nextBatch(self):
+            raise StopIteration
+            
+        def __iter__(self):
+            return self
+            
+        def __next__(self):
+            if (not self.exhausted):
+                self.exhausted = True
+                bn = os.path.basename(self.path)
+                if (not bn.startswith('.') and not bn.endswith('~')):
+                    return self.path
+                else: 
+                    raise StopIteration
+            else:
+                raise StopIteration
+
+                    
     def _modification_target_entry_iter(self):
         path = self.targetPath.get_text().strip()
         if (not path):
-            self.warning('Target directory path is empty!')
+            self.warning('Target path is empty!')
             return None
         else:
-            recurse = self.recursiveVisit.get_active()
-            return self._entry_iter(path, recurse)
+            # are we pointed at entry or dir? Return an iter
+            if(os.path.isdir(path)):
+                recurse = self.recursiveVisit.get_active()
+                return self._entry_iter(path, recurse)
+            else:
+                return self._entry_single_iter(path)
+
         
     def _modification_target_dir_iter(self):
         path = self.targetPath.get_text().strip()
         if (not path):
-            self.warning('Target directory path is empty!')
+            self.warning('Target path is empty!')
             return None            
         else:
-            recurse = self.recursiveVisit.get_active()
-            return self._dir_iter(path, recurse)
+            # ensure path is a dir, even if user selected an entry file
+            if(os.path.isdir(path)):
+                recurse = self.recursiveVisit.get_active()
+                return self._dir_iter(path, recurse)
+            else:
+                self.warning('Target path is not a directory!')
+                return None  
 
 
 
@@ -354,7 +406,8 @@ class MyWindow(Gtk.Window):
                 self.spinnerStart()
                 for p in targetIt:
                     sl.touched()
-                    src = "".join(open(p).readlines())            
+                    src = "".join(open(p).readlines())  
+                    print(p)          
                     modified = sitebuilder.header_merge.run(
                         src,
                         b,
@@ -535,7 +588,7 @@ class MyWindow(Gtk.Window):
                  "Select", Gtk.ResponseType.OK))
             dialog.set_default_size(800, 400)
             # contrary to GTK3 advice
-            dialog.set_current_folder(self.targetPath.get_text())
+            dialog.set_current_folder(self._target_as_dir())
             
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
@@ -549,27 +602,58 @@ class MyWindow(Gtk.Window):
             dialog.destroy()
          
          
+    def _selectTargetEntry(self, widget):
+            dialog = Gtk.FileChooserDialog("Please choose a file", self,
+                Gtk.FileChooserAction.OPEN,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                 "Select", Gtk.ResponseType.OK))
+            dialog.set_default_size(800, 400)
+            # contrary to GTK3 advice
+            dialog.set_current_folder(self.targetPath.get_text())
+            
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+                path = dialog.get_filename()
+                self.targetPath.set_text(path)
+                #self._guiClear()
+                self.message('New target file')
+            elif response == Gtk.ResponseType.CANCEL:
+                self.message('Selection cancelled')
+    
+            dialog.destroy()
+                 
     def targetPage(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         box.set_homogeneous(False)
 		
 		## Target directory
         label = Gtk.Label()
-        label.set_markup ("<b>Target directory</b>")
+        label.set_markup ("<b>Target</b>")
         label.set_halign(Gtk.Align.START)  
         box.pack_start(label, False, True, 0)
         
-        selectTargetButton = Gtk.Button(label="Select target directory")
-        selectTargetButton.connect("clicked", self._selectTargetFolder)
-        box.pack_start(selectTargetButton, False, True, 0)
+        button = Gtk.Button(label="Select target directory")
+        button.connect("clicked", self._selectTargetFolder)
+        box.pack_start(button, False, True, 0)
+        
+        self.recursiveVisit = Gtk.CheckButton.new_with_label("Visit recursive")
+        self.recursiveVisit.set_margin_bottom(8)
+        box.pack_start(self.recursiveVisit, False, False, 0) 
+        
+        label = Gtk.Label()
+        label.set_markup ("or")
+        label.set_halign(Gtk.Align.START)  
+        box.pack_start(label, False, True, 0)
+        
+        button = Gtk.Button(label="Select target file")
+        button.connect("clicked", self._selectTargetEntry)
+        box.pack_start(button, False, True, 0)
         
         self.targetPath = Gtk.Entry()
         self.targetPath.set_margin_bottom(8)
         box.pack_start(self.targetPath, False, True, 0)
 
-        self.recursiveVisit = Gtk.CheckButton.new_with_label("Visit recursive")
-        self.recursiveVisit.set_margin_bottom(8)
-        box.pack_start(self.recursiveVisit, False, False, 0)       
+      
 
 
         #separator = Gtk.Separator()
