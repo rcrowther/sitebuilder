@@ -3,7 +3,7 @@
   <schema path="/uk/co/archaicgroves/sitebuilder-gtk/" id="uk.co.archaicgroves.sitebuilder-gtk">
     <!--
         a(targetPathStr, recursive, headerStr, headerOverwrite, 
-        indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader
+        indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertHeaderData
         metaStr, metaButtonIndex,
         cssStr, cssButtonIndex, cssMatch,
         jsStr, jsOverwrite, cssMatch, 

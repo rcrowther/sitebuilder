@@ -11,6 +11,7 @@
 
 import os.path 
 from os import walk
+from html.parser import HTMLParser
 import sitebuilder.statlog
 statlog = sitebuilder.statlog
 
@@ -26,9 +27,9 @@ statlog = sitebuilder.statlog
 
 # Change for new intro to indexes
 def webPageOpen(f, title, headHTML, headerHTML):
-    f.write('<!DOCTYPE html>\n<html>\n<head>\n<title>{0}</title>\n'.format(title))
+    f.write('<!DOCTYPE html>\n<html>\n<head>\n')
     f.write(headHTML)
-    f.write('</head>\n<body>')
+    f.write('</head>\n<body>\n')
     f.write(headerHTML)
     f.write('<article>\n<h1>')
     f.write(title)
@@ -72,6 +73,117 @@ def indexLinkTemplate(href, text):
 
 
 
+### Header Parser ###
+class HeaderParser(HTMLParser):
+    '''
+    Parse for contents of 'head', and a first-child header in 'body'.
+    @param return tuple of parse results. HTML is returned without 'head' or 'header' tags.
+    '''
+    
+    def __init__(
+        self
+        ):
+            
+        HTMLParser.__init__(self)
+        
+        self.builder = []
+        self.readingHead = False
+        self.readingHeader = False
+        self.firstElemInBody = False
+
+        self.headHTML = []
+        self.headerHTML = []
+    
+
+
+        
+    #def p(self, value):
+     #   self.builder.append(value)
+        
+    def clearBuilder(self):
+        self.builder = []
+             
+    def filteredP(self, value):
+        if(self.readingHead or self.readingHeader):
+            self.builder.append(value)
+
+        
+    def handle_startendtag(self, tag, attrs):
+        #print('tag: ' + tag)
+        #print('attrs: ' + attrs[''])
+        self.filteredP(self.get_starttag_text())
+
+                
+    def handle_starttag(self, tag, attrs):
+        if (tag == 'head'):
+            self.readingHead = True
+        else:
+            if (self.firstElemInBody):
+                if(tag == 'header'):
+                    self.readingHeader = True
+                self.firstElemInBody = False  
+            else:
+                if (tag == 'body'):
+                    self.firstElemInBody = True
+                else:
+                    self.filteredP(self.get_starttag_text())
+
+
+    def handle_endtag(self, tag):
+        # put 'below' new link in
+        if (tag == 'head'):
+            self.readingHead = False
+            self.headHTML = self.builder
+            self.clearBuilder()
+        else:
+            if (tag == 'header' and self.readingHeader):
+                self.readingHeader = False
+                self.headerHTML = self.builder
+                self.clearBuilder()
+            else:
+                self.filteredP("</%s>" % (tag,))
+
+    def handle_data(self, data):
+        self.filteredP(data)
+
+    def handle_comment(self, data):
+        self.filteredP("<!--%s-->" % (data,))
+
+    def handle_entityref(self, name):
+        self.filteredP("&%s;" % (name,))
+
+    def handle_charref(self, name):
+        self.filteredP("&#%s;" % (name,))
+
+    def handle_decl(self, data):
+        self.filteredP("<!%s>" % (data,))
+
+    def handle_pi(self, data):
+        self.filteredP("<?%s>" % (data,))
+
+    def result(self):
+        return ("".join(self.headHTML).strip(), "".join(self.headerHTML).strip())
+
+def getHeaders(
+    srcPath
+    ):
+    try:
+        # convert_charrefs will default to True in py3.5:
+        parser = HeaderParser(
+            convert_charrefs=False
+            )
+    except TypeError:
+        # convert_charrefs was added in py3.4:
+        parser = HeaderParser(
+            )
+
+    # protect
+    srcHTML = "".join(open(srcPath).readlines()) 
+        
+    parser.feed(srcHTML)
+
+    return parser.result()
+
 
 ### Internal ###
 
@@ -114,35 +226,69 @@ def sortRespectingNumerics(l):
         syms = sorted(sym) 
         return syms + nums + alphas 
         
-        
+def _currentHeaders(indexPath):
+    #headHTML = 'blurt!'
+    #headerHTML =  'blurt header!'
+    (headHTML, headerHTML) = getHeaders(indexPath)
+    print('head:\n' + headHTML)
+    print('header:\n' + headerHTML)
+    return (headHTML, headerHTML)
+
+
+def pageTitle(dirPath):
+    # Make page title        
+    # get a tail....
+    head, tail = os.path.split(dirPath)
+    # if tail fails, likely passed a slash-ended directory, so go one higher...
+    lastElem = tail if (tail) else os.path.basename(head)
+    
+    # if left at a root (who does this?) default, 
+    # otherwise substitute out underscores for the title.
+    # Uppercase/capitalising fails badly in Unicode. Leave styling to CSS.
+    return "defaulty" if (not lastElem or lastElem == '.') else lastElem.replace('_', ' ')
+
+
 def mkIndex(
     headHTML,
     headerHTML,
     dirPath,
+    indexPath,
     dirNameList,
     entryNameList,
     absoluteURLs, 
     absoluteRoot,
-    shortURLs
+    shortURLs,
+    insertHeaders
     ):
 
     p =  os.path.join(dirPath, 'index.htm')
-        
+    humanTitle = pageTitle(dirPath)
+    
+    # an index exists (and is being replaced) and needs headers
+    # get the head data
+    respectingCurrentHeadHTML = ''
+    respectingCurrentHeaderHTML = ''
+    
+    if (indexPath and insertHeaders):
+        # use what is in current file
+        (currentHeadHTML, currentHeaderHTML) = _currentHeaders(p)
+        respectingCurrentHeadHTML = currentHeadHTML
+        if(currentHeaderHTML):
+            respectingCurrentHeaderHTML = '<header>\n' + currentHeaderHTML + '</header>\n'
+    else:
+        # construct from given data
+        titleHTML = '<title>{0}</title>\n'.format(humanTitle)
+        respectingCurrentHeadHTML = titleHTML + headHTML
+        respectingCurrentHeaderHTML = headerHTML 
     try:
         f = open(p, 'w')
 
-        # Make page title        
-        # get a tail....
-        head, tail = os.path.split(dirPath)
-        # if tail fails, likely passed a slash ended directory, so go one higher...
-        lastElem = tail if (tail) else os.path.basename(head)
-        
-        # if left at a root (who does this?) default, 
-        # otherwise substitute out underscores for the title.
-        # Uppercase/capitalising fails badly in Unicode. Leave styling to CSS.
-        title = "defaulty" if(not lastElem or lastElem == '.') else lastElem.replace('_', ' ')
-        
-        webPageOpen(f, title, headHTML, headerHTML)
+        webPageOpen(
+            f,
+            humanTitle,
+            respectingCurrentHeadHTML, 
+            respectingCurrentHeaderHTML
+            )
 
         f.write( indexOpenTemplate() )
         f.write( indexSectionOpenTemplate() )
@@ -185,12 +331,6 @@ def mkIndex(
         print('index file can not be created (exists? permissions?): %s' % p)
 
 
-
-def containsIndex(filenames):
-    r = False
-    for e in filenames:
-        r = r or e.startswith('index')
-    return r
     
 def processDirs(
     headHTML,
@@ -201,6 +341,7 @@ def processDirs(
     absoluteURLs,
     absoluteRoot,
     shortURLs,
+    insertHeaders,
     statLog
     ):
 
@@ -214,8 +355,7 @@ def processDirs(
     
     ##TODO: if none?
     
-    # filter directory names
-    # for hidden
+    # filter directory names for hidden
     dirNameList = []
     for n in dirNames:
         first = n[0]
@@ -224,23 +364,31 @@ def processDirs(
             
             
     # filter entry names
-    # get this test first
-    hasIndex = containsIndex(entryNames)
-    
     # for hidden and extensions
     entryNameList = []
     for n in entryNames:
         first = n[0]
-        if first != '.' and first != '~' and n.endswith(acceptList) and not n.startswith('index'):
+        if first != '.' and first != '~' and n.endswith(acceptList):
             entryNameList.append(n)
-              
-
+            
+    # split entry names for 'index'
+    # only looking for one, discard overwrite extra
+    nonIndexEntryNameList = []
+    indexEntryName = None
+    for n in entryNameList:
+        first = n[0]
+        if n.startswith('index'):
+            indexEntryName = n
+        else:
+            nonIndexEntryNameList.append(n)
+            
+    print('ip:'+ str(indexEntryName))
 
     # test if to create, if so, run
     #print('index')
-    if (hasIndex and not replace):
-        #TODO; log
-        print("Existing index ignored Path:" + dirPath)
+    if (indexEntryName and not replace):
+        #TODO; log?
+        print("Existing index, no index generated. Path: " + dirPath)
     else:
         #print('create index')
         statLog.changed()
@@ -248,11 +396,13 @@ def processDirs(
             headHTML,
             headerHTML,
             dirPath,
+            indexEntryName,
             dirNameList,
-            entryNameList, 
+            nonIndexEntryNameList, 
             absoluteURLs,
             absoluteRoot,
-            shortURLs
+            shortURLs,
+            insertHeaders
             )
         
 
@@ -265,6 +415,7 @@ def run(
     absoluteURLs,
     absoluteRoot,
     shortURLs,
+    insertHeaders,
     statLog
     ):
 
@@ -279,6 +430,7 @@ def run(
         absoluteURLs,
         absoluteRoot, 
         shortURLs,
+        insertHeaders,
         statLog
         )
 

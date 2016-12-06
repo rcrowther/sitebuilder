@@ -56,7 +56,7 @@ DATA_KEY = 'data'
 
 
 # a(targetPathStr, recursive, headerStr, headerOverwrite, 
-# indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertBodyHeader
+# indexHeadHTML, indexOverwrite, indexAbsoluteURLs, indexAbsoluteRootPath, indexShortURLs, indexInsertHeaderData
 # metaStr, metaButtonIndex,
 # cssStr, cssButtonIndex, cssMatch,
 # jsStr, jsOverwrite, jsMatch, 
@@ -118,7 +118,7 @@ class MyWindow(Gtk.Window):
     def getBufferText(self, textBuffer):
         start = textBuffer.get_start_iter()
         end = textBuffer.get_end_iter()
-        return  textBuffer.get_text(start, end, True)
+        return  textBuffer.get_text(start, end, True).strip()
 		
              
     def getActiveToggle(self, group):
@@ -150,7 +150,7 @@ class MyWindow(Gtk.Window):
         indexAbsoluteURLs = self.indexAbsoluteURLs.get_active()
         indexURLRootPath = self.indexAbsoluteRoot.get_text()
         indexShortURLs = self.indexShortURLs.get_active() 
-        indexInsertBodyHeader = self.indexInsertBodyHeader.get_active() 
+        indexInsertHeaderData = self.indexInsertHeaderData.get_active() 
         
         metaStr = self.getBufferText(self.metaHTML)
         metaButtonIdx = self.getActiveToggle(self.MetaGroup)
@@ -175,7 +175,7 @@ class MyWindow(Gtk.Window):
         indexAbsoluteURLs,
         indexURLRootPath,
         indexShortURLs,
-        indexInsertBodyHeader, 
+        indexInsertHeaderData, 
         metaStr,
         metaButtonIdx,
         cssStr,
@@ -212,7 +212,7 @@ class MyWindow(Gtk.Window):
             self.indexAbsoluteURLs.set_active(datum[6])
             self.indexAbsoluteRoot.set_text(datum[7])
             self.indexShortURLs.set_active(datum[8])            
-            self.indexInsertBodyHeader.set_active(datum[9])
+            self.indexInsertHeaderData.set_active(datum[9])
              
 
             self.metaHTML.set_text(datum[10])
@@ -394,7 +394,7 @@ class MyWindow(Gtk.Window):
     def _insertHeaders(self, widget):
         self.clearStatus()
             
-        b = self.getBufferText(self.headerBuffer).strip()
+        b = self.getBufferText(self.headerBuffer)
         o = self.overwriteHeader.get_active()
 
         if (not b and not o):
@@ -427,28 +427,46 @@ class MyWindow(Gtk.Window):
         a = self.indexAbsoluteURLs.get_active()
         r = self.indexAbsoluteRoot.get_text().strip()
         s = self.indexShortURLs.get_active()
-        h = self.indexInsertBodyHeader.get_active()
-        
+        h = self.indexInsertHeaderData.get_active()
+        print('h:' + str(h))
         if (not r and a):
             self.warning("root path empty for absolute URLs?")
         else:
             ## TODO: not including self?
             targetIt = self._modification_target_dir_iter()
             if (targetIt):
-                bodyHeaderMarkup = self.getBufferText(self.headerBuffer).strip() if (h) else ''
-                
+                if (h):
+                    metaMarkup = self.getBufferText(self.metaHTML) 
+                    metaMarkup = metaMarkup if (metaMarkup) else metaMarkup + '\n'
+                    css = self.cssPath.get_text().strip()
+                    if (css):
+                        cssMarkup = '<link rel="stylesheet" type="text/css" href="%s"/>\n' % (css)
+                    else:
+                        cssMarkup = ''
+                    js = self.jsPath.get_text().strip()
+                    if (js):
+                        jsMarkup = '<script type="text/javascript" src="%s"></script>\n' % (js)
+                    else:
+                        jsMarkup = ''
+                    htmlHeadMarkup = (metaMarkup + headHTML + cssMarkup + jsMarkup).strip()
+                    bodyHeaderMarkup = self.getBufferText(self.headerBuffer)
+                else:
+                    htmlHeadMarkup = headHTML
+                    bodyHeaderMarkup = ''
+
                 sl = statlog.statLog()
                 self.spinnerStart()
                 for p in targetIt:
                     sl.touched()
                     sitebuilder.index_create.run(
-                        headHTML,
+                        htmlHeadMarkup,
                         bodyHeaderMarkup,
                         p,
                         o,
                         a,
                         r,
                         s,
+                        h,
                         sl
                         )
                 self.spinnerStop()
@@ -458,7 +476,7 @@ class MyWindow(Gtk.Window):
     def _insertMeta(self, widget):
         self.clearStatus()
         
-        meta = self.getBufferText(self.metaHTML).strip()
+        meta = self.getBufferText(self.metaHTML)
 
         actionIdx = self.getActiveToggle(self.MetaGroup)
 
@@ -734,8 +752,17 @@ class MyWindow(Gtk.Window):
         self.indexShortURLs = Gtk.CheckButton.new_with_label("Generate short URLs")
         box.pack_start(self.indexShortURLs, False, False, 0)        
         
-        self.indexInsertBodyHeader = Gtk.CheckButton.new_with_label("Insert page header from 'Page Headers' tab")
-        box.pack_start(self.indexInsertBodyHeader, False, False, 0) 
+        self.indexInsertHeaderData = Gtk.CheckButton.new_with_label("Insert head and header data")
+        box.pack_start(self.indexInsertHeaderData, False, False, 0) 
+        
+        # advice for the above option
+        # wrapping and justification not working for me R.C.
+        label = Gtk.Label()
+        label.set_markup ("<i>(If pages exist, the option above will re-use\nexisting HTML and page header data.\nOtherwise, it uses the contents of the\n'Page Headers''Meta' 'CSS' 'JS tabs)</i>")
+        label.set_halign(Gtk.Align.START)  
+        #label.set_line_wrap(True)
+        #label.set_justify(Gtk.Justification.FILL)
+        box.pack_start(label, False, True, 0)
         
         button = Gtk.Button(label="Make indexes")
         button.connect("clicked", self._createIndexes)
