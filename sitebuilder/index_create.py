@@ -224,15 +224,7 @@ def sortRespectingNumerics(l):
         alphas = sorted(alpha) 
         nums = sorted(num, key=cmpkeyRespectingNumerics)
         syms = sorted(sym) 
-        return syms + nums + alphas 
-        
-def _currentHeaders(indexPath):
-    #headHTML = 'blurt!'
-    #headerHTML =  'blurt header!'
-    (headHTML, headerHTML) = getHeaders(indexPath)
-    print('head:\n' + headHTML)
-    print('header:\n' + headerHTML)
-    return (headHTML, headerHTML)
+        return syms + nums + alphas
 
 
 def pageTitle(dirPath):
@@ -271,7 +263,7 @@ def mkIndex(
     
     if (indexPath and insertHeaders):
         # use what is in current file
-        (currentHeadHTML, currentHeaderHTML) = _currentHeaders(p)
+        (currentHeadHTML, currentHeaderHTML) = getHeaders(p)
         respectingCurrentHeadHTML = currentHeadHTML
         if(currentHeaderHTML):
             respectingCurrentHeaderHTML = '<header>\n' + currentHeaderHTML + '</header>\n'
