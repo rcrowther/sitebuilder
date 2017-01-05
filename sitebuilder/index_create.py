@@ -29,7 +29,7 @@ statlog = sitebuilder.statlog
 def webPageOpen(f, title, headHTML, headerHTML):
     f.write('<!DOCTYPE html>\n<html>\n<head>\n')
     f.write(headHTML)
-    f.write('</head>\n<body>\n')
+    f.write('\n</head>\n<body>\n')
     f.write(headerHTML)
     f.write('<article>\n<h1>')
     f.write(title)
@@ -121,6 +121,7 @@ class HeaderParser(HTMLParser):
             if (self.firstElemInBody):
                 if(tag == 'header'):
                     self.readingHeader = True
+                    self.builder.append(self.get_starttag_text())
                 self.firstElemInBody = False  
             else:
                 if (tag == 'body'):
@@ -137,6 +138,7 @@ class HeaderParser(HTMLParser):
             self.clearBuilder()
         else:
             if (tag == 'header' and self.readingHeader):
+                self.builder.append('</header>\n')
                 self.readingHeader = False
                 self.headerHTML = self.builder
                 self.clearBuilder()
@@ -265,8 +267,7 @@ def mkIndex(
         # use what is in current file
         (currentHeadHTML, currentHeaderHTML) = getHeaders(p)
         respectingCurrentHeadHTML = currentHeadHTML
-        if(currentHeaderHTML):
-            respectingCurrentHeaderHTML = '<header>\n' + currentHeaderHTML + '</header>\n'
+        respectingCurrentHeaderHTML = currentHeaderHTML
     else:
         # construct from given data
         titleHTML = '<title>{0}</title>\n'.format(humanTitle)
